@@ -55,7 +55,7 @@ class TrainingDataSet(object):
                 self.movie_clip_names[movie_name] = []
             self.movie_clip_names[movie_name].append(k)
         self.movie_names = list(movie_names_set)
-        self.visual_feature_dim = 4096*3
+        self.visual_feature_dim = 4096
         self.sent_vec_dim = 4800
         self.num_samples = len(self.clip_sentence_pairs)
         self.sliding_clip_path = sliding_dir
