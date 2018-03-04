@@ -7,6 +7,15 @@ from sklearn.metrics import average_precision_score
 import pickle
 import vs_multilayer
 import operator
+import os
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--gpu', default='0', type=str, help='index of GPU to use')
+opt = parser.parse_args()
+print(opt)
+os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu
+
 
 def dense_to_one_hot(labels_dense, num_classes):
     """Convert class labels from scalars to one-hot vectors."""
@@ -157,7 +166,7 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
 
 def run_training():
     initial_steps = 0
-    max_steps = 20000
+    max_steps = 10000
     batch_size = 56
     train_csv_path = "../TACoS/train_clip-sentvec.pkl"
     test_csv_path = "../TACoS/test_clip-sentvec.pkl"

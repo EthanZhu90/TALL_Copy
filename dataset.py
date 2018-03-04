@@ -1,9 +1,11 @@
-
 import numpy as np
 from math import sqrt
 import os
 import random
 import pickle
+
+
+
 
 '''
 calculate temporal intersection over union
