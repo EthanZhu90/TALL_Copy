@@ -65,8 +65,9 @@ def nms_temporal(x1,x2,s, overlap):
 '''
 compute recall at certain IoU
 '''
-def compute_IoU_recall_top_n_forreg(top_n, iou_thresh, sentence_image_mat, sentence_image_reg_mat, sclips, iclips):
-    correct_num = 0.0
+def compute_IoU_recall_top_n_forreg(top_n_list, iou_thresh, sentence_image_mat, sentence_image_reg_mat, sclips, iclips):
+    correct_num = [0.0] * len(top_n_list)
+
     for k in range(sentence_image_mat.shape[0]):
         gt = sclips[k]
         gt_start = float(gt.split("_")[1])
@@ -77,14 +78,16 @@ def compute_IoU_recall_top_n_forreg(top_n, iou_thresh, sentence_image_mat, sente
         ends = [e for e in sentence_image_reg_mat[k,:,1]]
         picks = nms_temporal(starts,ends, sim_v, iou_thresh-0.05)
         #sim_argsort=np.argsort(sim_v)[::-1][0:top_n]
-        if top_n<len(picks): picks=picks[0:top_n]
-        for index in picks:
-            pred_start = sentence_image_reg_mat[k, index, 0]
-            pred_end = sentence_image_reg_mat[k, index, 1]
-            iou = calculate_IoU((gt_start, gt_end),(pred_start, pred_end))
-            if iou>=iou_thresh:
-                correct_num+=1
-                break
+        for idx, top_n in enumerate(top_n_list):
+            if top_n<len(picks): picks=picks[0:top_n]
+            for index in picks:
+                pred_start = sentence_image_reg_mat[k, index, 0]
+                pred_end = sentence_image_reg_mat[k, index, 1]
+                iou = calculate_IoU((gt_start, gt_end),(pred_start, pred_end))
+                if iou>=iou_thresh:
+                    correct_num[idx]+=1
+                    break
+
     return correct_num
 
 '''
@@ -140,9 +143,8 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
         # calculate Recall@m, IoU=n
         for k in range(len(IoU_thresh)):
             IoU=IoU_thresh[k]
-            correct_num_10 = compute_IoU_recall_top_n_forreg(10, IoU, sentence_image_mat, sentence_image_reg_mat, sclips, iclips)
-            correct_num_5 = compute_IoU_recall_top_n_forreg(5, IoU, sentence_image_mat, sentence_image_reg_mat, sclips, iclips)
-            correct_num_1 = compute_IoU_recall_top_n_forreg(1, IoU, sentence_image_mat, sentence_image_reg_mat, sclips, iclips)
+            correct_num_10,correct_num_5, correct_num_1 = \
+                compute_IoU_recall_top_n_forreg([10,5,1], IoU, sentence_image_mat, sentence_image_reg_mat, sclips, iclips)
             print movie_name+" IoU="+str(IoU)+", R@10: "+str(correct_num_10/len(sclips))+"; IoU="+str(IoU)+", R@5: "+str(correct_num_5/len(sclips))+"; IoU="+str(IoU)+", R@1: "+str(correct_num_1/len(sclips))
             all_correct_num_10[k]+=correct_num_10
             all_correct_num_5[k]+=correct_num_5
