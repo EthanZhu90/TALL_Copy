@@ -196,10 +196,10 @@ def run_evl():
     print 'Runing evaluation'
     exp = 'test_video_iter9999'
     batch_size = 56
-    train_csv_path = "./exp_data/TACoS/train_clip-sentvec.pkl"
-    test_csv_path = "./exp_data/TACoS/test_clip-sentvec.pkl"
-    test_feature_dir = "./exp_data/Interval128_256_overlap0.8_c3d_fc6/"
-    train_feature_dir = "./exp_data/Interval64_128_256_512_overlap0.8_c3d_fc6/"
+    train_csv_path = "../TACoS/TACoS/train_clip-sentvec.pkl"
+    test_csv_path = "../TACoS/TACoS/test_clip-sentvec.pkl"
+    test_feature_dir = "../TACoS/Interval128_256_overlap0.8_c3d_fc6/"
+    train_feature_dir = "../TACoS/Interval64_128_256_512_overlap0.8_c3d_fc6/"
 
     model = ctrl_model.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
     test_result_output = open( "ctrl_test_results_"+exp+".txt", "ab")
@@ -215,8 +215,8 @@ def run_evl():
 
 
 def main(_):
-    # run_training()
-    run_evl()
+    run_training()
+    # run_evl()
 
 if __name__ == '__main__':
     tf.app.run()

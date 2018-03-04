@@ -111,13 +111,14 @@ class CTRL_Model(object):
         mask_mat = tf.add(I_2, all1)
         # loss cls, not considering iou
         I = tf.diag(tf.constant(1.0, shape=[self.batch_size]))
-        I_half = tf.diag(tf.constant(0.5, shape=[self.batch_size]))
         batch_para_mat = tf.constant(self.alpha, shape=[self.batch_size, self.batch_size])
+
         para_mat = tf.add(I,batch_para_mat)
         loss_mat = tf.log(tf.add(all1, tf.exp(tf.multiply(mask_mat, sim_score_mat))))
         loss_mat = tf.multiply(loss_mat, para_mat)
         loss_align = tf.reduce_mean(loss_mat)
         # regression loss
+
         l_reg_diag = tf.matmul(tf.multiply(l_reg_mat, I), tf.constant(1.0, shape=[self.batch_size, 1]))
         p_reg_diag = tf.matmul(tf.multiply(p_reg_mat, I), tf.constant(1.0, shape=[self.batch_size, 1]))
         offset_pred = tf.concat((p_reg_diag, l_reg_diag), 1)
