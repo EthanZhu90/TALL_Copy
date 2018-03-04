@@ -4,8 +4,8 @@ from tensorflow.python.framework import dtypes
 
 from util.cnn import fc_layer as fc
 import vs_multilayer 
-from dataset import TestingDataSet
-from dataset import TrainingDataSet
+from dataset_noContext import TestingDataSet
+from dataset_noContext import TrainingDataSet
 
 
 class CTRL_Model(object):

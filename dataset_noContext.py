@@ -329,10 +329,10 @@ class TestingDataSet(object):
                 # print str(k)+"/"+str(len(self.movie_clip_names[movie_name]))
                 visual_feature_path = self.sliding_clip_path+self.sliding_clip_names[k]+".npy"
                 #context_feat=self.get_context(self.sliding_clip_names[k]+".npy")
-                left_context_feat,right_context_feat = self.get_context_window(self.sliding_clip_names[k]+".npy",1)
+                # left_context_feat,right_context_feat = self.get_context_window(self.sliding_clip_names[k]+".npy",1)
                 feature_data = np.load(visual_feature_path)
                 #comb_feat=np.hstack((context_feat,feature_data))
-                comb_feat = np.hstack((left_context_feat,feature_data,right_context_feat))
+                comb_feat = feature_data  # np.hstack((left_context_feat,feature_data,right_context_feat))
                 movie_clip_featmap.append((self.sliding_clip_names[k], comb_feat))
         return movie_clip_featmap, movie_clip_sentences
 
