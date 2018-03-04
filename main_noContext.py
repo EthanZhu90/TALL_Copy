@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-import ctrl_model
+import ctrl_model_noContext
 from six.moves import xrange
 import time
 from sklearn.metrics import average_precision_score
@@ -154,8 +154,8 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
             IoU=IoU_thresh[k]
             correct_num_5, correct_num_1 = \
                 compute_IoU_recall_top_n_forreg([5,1], IoU, sentence_image_mat, sentence_image_reg_mat, sclips, iclips)
-            # print(correct_num_5, correct_num_1)
-            # print(len(sclips), len(iclips))
+            print(correct_num_5, correct_num_1)
+            print(len(sclips), len(iclips))
             print(movie_name+" IoU="+str(IoU)+", R@5: "+str(correct_num_5/len(sclips))+"; IoU="+str(IoU)+", R@1: "+str(correct_num_1/len(sclips)))
 
             all_correct_num_5[k]+=correct_num_5
@@ -170,7 +170,7 @@ def run_training():
     initial_steps = 0
     max_steps = 10000
     batch_size = 56
-    exp_info = "origial"
+    exp_info = "noContext"
 
     train_csv_path = "../TACoS/train_clip-sentvec.pkl"
     test_csv_path = "../TACoS/test_clip-sentvec.pkl"
@@ -180,7 +180,7 @@ def run_training():
     save_model_folder = os.path.join(cwd, "trained_model", exp_info)
     if not os.path.isdir(save_model_folder): os.mkdir(save_model_folder)
 
-    model = ctrl_model.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
+    model = ctrl_model_noContext.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
     test_result_output=open("ctrl_test_results.txt", "w")
     with tf.Graph().as_default():
 
