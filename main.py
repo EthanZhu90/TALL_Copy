@@ -199,12 +199,12 @@ def run_training():
             _, loss_value, offset_pred_v, loss_reg_v = sess.run([vs_train_op, loss_align_reg, offset_pred, loss_reg], feed_dict=feed_dict)
             duration = time.time() - start_time
 
-            if step % 100 == 0:
+            if step % 200 == 0:
                 # Print status to stdout.
                 print('Step %d: loss = %.3f (%.3f sec)' % (step, loss_value, duration))
 
             if (step+1) % 1000 == 0: #2000
-                saver.save(sess, "trained_model/iter_{}.ckpt".format(step))
+                saver.save(sess, save_model_folder + "iter_{}.ckpt".format(step))
                 print("Start to test:-----------------\n")
                 movie_length_info=pickle.load(open("./video_allframes_info.pkl"))
                 do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, step+1, test_result_output)
