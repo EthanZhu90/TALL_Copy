@@ -203,7 +203,7 @@ def run_training():
                 # Print status to stdout.
                 print('Step %d: loss = %.3f (%.3f sec)' % (step, loss_value, duration))
 
-            if (step+1) % 200 == 0: #2000
+            if (step+1) % 1000 == 0: #2000
                 saver.save(sess, "trained_model/iter_{}.ckpt".format(step))
                 print("Start to test:-----------------\n")
                 movie_length_info=pickle.load(open("./video_allframes_info.pkl"))
