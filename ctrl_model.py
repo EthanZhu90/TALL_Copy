@@ -57,7 +57,7 @@ class CTRL_Model(object):
             [batch_size, batch_size, self.semantic_size])
         ss_feature = tf.reshape(tf.tile(sentence_embed,[1, batch_size]),[batch_size, batch_size, self.semantic_size])
         concat_feature = tf.reshape(tf.concat([vv_feature, ss_feature], 2),[batch_size, batch_size, self.semantic_size+self.semantic_size])
-        print concat_feature.get_shape().as_list()
+        print(concat_feature.get_shape().as_list())
         mul_feature = tf.multiply(vv_feature, ss_feature)
         add_feature = tf.add(vv_feature, ss_feature)
         
@@ -70,7 +70,7 @@ class CTRL_Model(object):
     def visual_semantic_infer(self, visual_feature_train, sentence_embed_train, visual_feature_test, sentence_embed_test):
         name="CTRL_Model"
         with tf.variable_scope(name):
-            print "Building training network...............................\n"     
+            print("Building training network...............................\n")
             transformed_clip_train = fc('v2s_lt', visual_feature_train, output_dim=self.semantic_size) 
             transformed_clip_train_norm = tf.nn.l2_normalize(transformed_clip_train, dim=1)
             transformed_sentence_train = fc('s2s_lt', sentence_embed_train, output_dim=self.semantic_size)
@@ -80,7 +80,7 @@ class CTRL_Model(object):
             sim_score_mat_train = tf.reshape(sim_score_mat_train,[self.batch_size, self.batch_size, 3])
 
             tf.get_variable_scope().reuse_variables()
-            print "Building test network...............................\n" 
+            print("Building test network...............................\n")
             transformed_clip_test = fc('v2s_lt', visual_feature_test, output_dim=self.semantic_size)
             transformed_clip_test_norm = tf.nn.l2_normalize(transformed_clip_test, dim=1)
             transformed_sentence_test = fc('s2s_lt', sentence_embed_test, output_dim=self.semantic_size)
@@ -148,9 +148,9 @@ class CTRL_Model(object):
                 if name in v.name: v_dict[name].append(v)
 
         for name in name_list:
-            print "Variables of <"+name+">"
+            print("Variables of <"+name+">")
             for v in v_dict[name]:
-                print "    "+v.name
+                print("    "+v.name)
         return v_dict
 
     def training(self, loss):
