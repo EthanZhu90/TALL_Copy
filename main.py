@@ -154,7 +154,8 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
             IoU=IoU_thresh[k]
             correct_num_5, correct_num_1 = \
                 compute_IoU_recall_top_n_forreg([5,1], IoU, sentence_image_mat, sentence_image_reg_mat, sclips, iclips)
-            print(movie_name+" IoU="+str(IoU)+", IoU="+str(IoU)+", R@5: "+str(correct_num_5/len(sclips))+"; IoU="+str(IoU)+", R@1: "+str(correct_num_1/len(sclips)))
+            print(correct_num_5, correct_num_1)
+            print(movie_name+" IoU="+str(IoU)+", R@5: "+str(correct_num_5/len(sclips))+"; IoU="+str(IoU)+", R@1: "+str(correct_num_1/len(sclips)))
 
             all_correct_num_5[k]+=correct_num_5
             all_correct_num_1[k]+=correct_num_1
