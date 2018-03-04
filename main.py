@@ -113,7 +113,7 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
         print("Test movie: "+movie_name+"....loading movie data")
         movie_clip_featmaps, movie_clip_sentences=model.test_set.load_movie_slidingclip(movie_name, 16)
         # movie_clip_featmaps = movie_clip_featmaps[:20]
-        movie_clip_sentences = movie_clip_sentences[:2]
+        # movie_clip_sentences = movie_clip_sentences[:2]
 
         print("sentences: "+ str(len(movie_clip_sentences)))
         print("clips: "+ str(len(movie_clip_featmaps)))
@@ -203,7 +203,7 @@ def run_training():
                 # Print status to stdout.
                 print('Step %d: loss = %.3f (%.3f sec)' % (step, loss_value, duration))
 
-            if (step+1) % 10 == 0: #2000
+            if (step+1) % 200 == 0: #2000
                 saver.save(sess, "trained_model/iter_{}.ckpt".format(step))
                 print("Start to test:-----------------\n")
                 movie_length_info=pickle.load(open("./video_allframes_info.pkl"))
