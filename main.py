@@ -197,7 +197,7 @@ def run_training():
             _, loss_value, offset_pred_v, loss_reg_v = sess.run([vs_train_op, loss_align_reg, offset_pred, loss_reg], feed_dict=feed_dict)
             duration = time.time() - start_time
 
-            if step % 5 == 0:
+            if step % 100 == 0:
                 # Print status to stdout.
                 print('Step %d: loss = %.3f (%.3f sec)' % (step, loss_value, duration))
 
