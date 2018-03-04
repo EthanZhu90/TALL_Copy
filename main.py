@@ -155,6 +155,7 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
             correct_num_5, correct_num_1 = \
                 compute_IoU_recall_top_n_forreg([5,1], IoU, sentence_image_mat, sentence_image_reg_mat, sclips, iclips)
             print(correct_num_5, correct_num_1)
+            print(len(sclips), len(iclips))
             print(movie_name+" IoU="+str(IoU)+", R@5: "+str(correct_num_5/len(sclips))+"; IoU="+str(IoU)+", R@1: "+str(correct_num_1/len(sclips)))
 
             all_correct_num_5[k]+=correct_num_5
@@ -202,7 +203,7 @@ def run_training():
                 # Print status to stdout.
                 print('Step %d: loss = %.3f (%.3f sec)' % (step, loss_value, duration))
 
-            if (step+1) % 500 == 0: #2000
+            if (step+1) % 10 == 0: #2000
                 saver.save(sess, "trained_model/iter_{}.ckpt".format(step))
                 print("Start to test:-----------------\n")
                 movie_length_info=pickle.load(open("./video_allframes_info.pkl"))
