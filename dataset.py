@@ -32,7 +32,7 @@ class TrainingDataSet(object):
         self.context_num = 1
         self.context_size = 128
         print("Reading training data list from "+it_path)
-        cs = pickle.load(open(it_path, encoding='bytes'))
+        cs = pickle.load(open(it_path), encoding='bytes')
         movie_length_info = pickle.load(open("./video_allframes_info.pkl"))
         self.clip_sentence_pairs = []
         for l in cs:
