@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-import ctrl_model_noContext
+import ctrl_model_noContext_noComb
 from six.moves import xrange
 import time
 from sklearn.metrics import average_precision_score
@@ -170,7 +170,7 @@ def run_training():
     initial_steps = 0
     max_steps = 10000
     batch_size = 56
-    exp_info = "noContext"
+    exp_info = "noContext_noComb"
 
     train_csv_path = "../TACoS/train_clip-sentvec.pkl"
     test_csv_path = "../TACoS/test_clip-sentvec.pkl"
@@ -180,7 +180,7 @@ def run_training():
     save_model_folder = os.path.join(cwd, "trained_model", exp_info)
     if not os.path.isdir(save_model_folder): os.mkdir(save_model_folder)
 
-    model = ctrl_model_noContext.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
+    model = ctrl_model_noContext_noComb.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
     test_result_output=open(save_model_folder + "ctrl_test_results.txt", "w")
     with tf.Graph().as_default():
 
@@ -219,7 +219,7 @@ def run_evl():
     test_feature_dir = "../TACoS/Interval128_256_overlap0.8_c3d_fc6/"
     train_feature_dir = "../TACoS/Interval64_128_256_512_overlap0.8_c3d_fc6/"
 
-    model = ctrl_model_noContext.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
+    model = ctrl_model_noContext_noComb.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
     test_result_output = open( "ctrl_test_results_"+exp+".txt", "ab")
     with tf.Graph().as_default():
         loss_align_reg, vs_train_op, vs_eval_op, offset_pred, loss_reg = model.construct_model()
