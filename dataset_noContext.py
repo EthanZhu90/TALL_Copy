@@ -68,8 +68,15 @@ class TrainingDataSet(object):
             print("Loading data from {}".format('clip_sentence_pairs_iou.pkl'))
             with open('clip_sentence_pairs_iou.pkl', 'rb') as input:
                 self.clip_sentence_pairs_iou = pickle.load(input)
+            """
+            Remove s26-d26 since dtfv feature extraction not finish 
+            """
+            _tmp_len = len(self.clip_sentence_pairs_iou)
+            self.clip_sentence_pairs_iou = [i for i in self.clip_sentence_pairs_iou if 's26-d26' not in i[0]]
             self.num_samples_iou = len(self.clip_sentence_pairs_iou)
+            print(_tmp_len, " iou clip-sentence pairs are readed before removAe s26-d26")
             print(str(len(self.clip_sentence_pairs_iou)) + " iou clip-sentence pairs are readed")
+
             return
 
         self.clip_sentence_pairs_iou = []
