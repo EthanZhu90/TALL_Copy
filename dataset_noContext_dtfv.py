@@ -5,7 +5,7 @@ import random
 import pickle
 from shutil import copyfile
 
-
+from sklearn.preprocessing import normalize
 
 '''
 calculate temporal intersection over union
@@ -60,7 +60,6 @@ class TrainingDataSet(object):
         self.num_samples = len(self.clip_sentence_pairs)
         self.sliding_clip_path = sliding_dir
         print(str(len(self.clip_sentence_pairs))+" clip-sentence pairs are readed")
-
 
         # read sliding windows, and match them with the groundtruths to make training samples
         sliding_clips_tmp = os.listdir(self.sliding_clip_path)
@@ -181,7 +180,8 @@ class TrainingDataSet(object):
     read next batch of training data, this function is used for training CTRL-reg
     '''
     def next_batch_iou(self):
-
+        dims = {'Trajectory': (0, 30), 'HOG': (30, 30 + 96), 'HOF': (30 + 96, 30 + 96 + 108),
+                'MBHx': (30 + 96 + 108, 30 + 96 + 108 + 96), 'MBHy': (30 + 96 + 108 + 96, 30 + 96 + 108 + 96 + 96)}
         random_batch_index = random.sample(range(self.num_samples_iou), self.batch_size)
         image_batch = np.zeros([self.batch_size, self.visual_feature_dim])
         sentence_batch = np.zeros([self.batch_size, self.sent_vec_dim])
@@ -208,7 +208,12 @@ class TrainingDataSet(object):
                 r = random.choice(range(self.num_samples_iou))
                 random_batch_index[index] = r
                 continue
-       
+        """
+        Normalize
+        """
+        for key in dims.keys():
+            image_batch[:, dims[key][0]:dims[key][1]] = normalize(image_batch[:, dims[key][0]:dims[key][1]], norm='l2',
+                                                                  axis=1)
         return image_batch, sentence_batch, offset_batch
 
 

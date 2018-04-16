@@ -4,7 +4,7 @@ import os
 import random
 import pickle
 
-
+from sklearn.preprocessing import normalize
 
 
 '''
@@ -170,6 +170,8 @@ class TrainingDataSet(object):
     '''
     read next batch of training data, this function is used for training CTRL-reg
     '''
+
+
     def next_batch_iou(self):
 
         random_batch_index = random.sample(range(self.num_samples_iou), self.batch_size)
@@ -198,7 +200,8 @@ class TrainingDataSet(object):
                 r = random.choice(range(self.num_samples_iou))
                 random_batch_index[index] = r
                 continue
-       
+
+
         return image_batch, sentence_batch, offset_batch
 
 
