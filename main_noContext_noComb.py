@@ -108,6 +108,7 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
     all_correct_num_5 = [0.0]*5
     all_correct_num_1 = [0.0]*5
     all_retrievd = 0.0
+
     for movie_name in model.test_set.movie_names:
         movie_length=movie_length_info[movie_name.split(".")[0]]
         print("Test movie: "+movie_name+"....loading movie data")
@@ -123,7 +124,8 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
             #sentence_clip_name=movie_clip_sentences[k][0]
             #start=float(sentence_clip_name.split("_")[1])
             #end=float(sentence_clip_name.split("_")[2].split("_")[0])
-            
+
+
             sent_vec=movie_clip_sentences[k][1]
             sent_vec=np.reshape(sent_vec,[1,sent_vec.shape[0]])
             for t in range(len(movie_clip_featmaps)):
@@ -132,6 +134,8 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
                 start = float(visual_clip_name.split("_")[1])
                 end = float(visual_clip_name.split("_")[2].split("_")[0])
                 featmap = np.reshape(featmap, [1, featmap.shape[0]])
+
+
                 feed_dict = {
                 model.visual_featmap_ph_test: featmap,
                 model.sentence_ph_test:sent_vec

@@ -8,7 +8,7 @@ import pickle
 import vs_multilayer
 import operator
 import os
-
+from sklearn.preprocessing import normalize
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', default='0', type=str, help='index of GPU to use')
@@ -103,6 +103,8 @@ def compute_IoU_recall_top_n_forreg(top_n_list, iou_thresh, sentence_image_mat, 
 evaluate the model
 '''
 def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, test_result_output):
+    dims = {'Trajectory': (0, 30), 'HOG': (30, 30 + 96), 'HOF': (30 + 96, 30 + 96 + 108),
+            'MBHx': (30 + 96 + 108, 30 + 96 + 108 + 96), 'MBHy': (30 + 96 + 108 + 96, 30 + 96 + 108 + 96 + 96)}
     IoU_thresh = [0.1, 0.3, 0.5]
     all_correct_num_10 = [0.0]*5
     all_correct_num_5 = [0.0]*5
@@ -123,11 +125,19 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
             #sentence_clip_name=movie_clip_sentences[k][0]
             #start=float(sentence_clip_name.split("_")[1])
             #end=float(sentence_clip_name.split("_")[2].split("_")[0])
-            
+
             sent_vec=movie_clip_sentences[k][1]
             sent_vec=np.reshape(sent_vec,[1,sent_vec.shape[0]])
             for t in range(len(movie_clip_featmaps)):
                 featmap = movie_clip_featmaps[t][1]
+
+                """
+                Normalize
+                """
+                for key in dims.keys():
+                    featmap[:, dims[key][0]:dims[key][1]] = normalize(featmap[:, dims[key][0]:dims[key][1]],
+                                                                          norm='l2',
+                                                                          axis=1)
                 visual_clip_name = movie_clip_featmaps[t][0]
                 start = float(visual_clip_name.split("_")[1])
                 end = float(visual_clip_name.split("_")[2].split("_")[0])
