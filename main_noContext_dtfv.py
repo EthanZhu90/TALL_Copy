@@ -139,10 +139,10 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
                 """
                 Normalize
                 """
-                for key in dims.keys():
-                    featmap[:, dims[key][0]:dims[key][1]] = normalize(featmap[:, dims[key][0]:dims[key][1]],
-                                                                   norm='l2',
-                                                                   axis=1)
+                # for key in dims.keys():
+                #     featmap[:, dims[key][0]:dims[key][1]] = normalize(featmap[:, dims[key][0]:dims[key][1]],
+                #                                                    norm='l2',
+                #                                                    axis=1)
                 feed_dict = {
                 model.visual_featmap_ph_test: featmap,
                 model.sentence_ph_test:sent_vec

@@ -211,9 +211,9 @@ class TrainingDataSet(object):
         """
         Normalize
         """
-        for key in dims.keys():
-            image_batch[:, dims[key][0]:dims[key][1]] = normalize(image_batch[:, dims[key][0]:dims[key][1]], norm='l2',
-                                                                  axis=1)
+        # for key in dims.keys():
+        #     image_batch[:, dims[key][0]:dims[key][1]] = normalize(image_batch[:, dims[key][0]:dims[key][1]], norm='l2',
+        #                                                           axis=1)
         return image_batch, sentence_batch, offset_batch
 
 
