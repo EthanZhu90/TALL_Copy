@@ -131,17 +131,18 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
             for t in range(len(movie_clip_featmaps)):
                 featmap = movie_clip_featmaps[t][1]
 
+
+                visual_clip_name = movie_clip_featmaps[t][0]
+                start = float(visual_clip_name.split("_")[1])
+                end = float(visual_clip_name.split("_")[2].split("_")[0])
+                featmap = np.reshape(featmap, [1, featmap.shape[0]])
                 """
                 Normalize
                 """
                 for key in dims.keys():
                     featmap[:, dims[key][0]:dims[key][1]] = normalize(featmap[:, dims[key][0]:dims[key][1]],
-                                                                          norm='l2',
-                                                                          axis=1)
-                visual_clip_name = movie_clip_featmaps[t][0]
-                start = float(visual_clip_name.split("_")[1])
-                end = float(visual_clip_name.split("_")[2].split("_")[0])
-                featmap = np.reshape(featmap, [1, featmap.shape[0]])
+                                                                   norm='l2',
+                                                                   axis=1)
                 feed_dict = {
                 model.visual_featmap_ph_test: featmap,
                 model.sentence_ph_test:sent_vec
