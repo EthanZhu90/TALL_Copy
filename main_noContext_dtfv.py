@@ -174,8 +174,8 @@ def run_training():
 
     train_csv_path = "../TACoS/train_clip-sentvec.pkl"
     test_csv_path = "../TACoS/test_clip-sentvec.pkl"
-    test_feature_dir = "/home/ethan/IJCAI18/dtfv_feature/script/clip_128_256_test/"
-    train_feature_dir = "/home/ethan/IJCAI18/dtfv_feature/script/clip_features_small/"
+    test_feature_dir = "../TACoS/clip_128_256_test/"
+    train_feature_dir = "../TACoS/clip_features_small/"
     cwd = os.getcwd()
     save_model_folder = os.path.join(cwd, "trained_model", exp_info)
     if not os.path.isdir(save_model_folder): os.mkdir(save_model_folder)
