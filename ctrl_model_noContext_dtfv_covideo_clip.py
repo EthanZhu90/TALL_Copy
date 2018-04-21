@@ -116,8 +116,8 @@ class CTRL_Model(object):
         sim_score_mat, _, _ = tf.split(sim_reg_mat_mix, num_or_size_splits=3, axis=1)
 
         mask_mat = tf.concat((tf.constant(-1.0, shape=[self.batch_size]), tf.constant(1.0, shape=[self.batch_size])), 0)
-        all1 = tf.constant(-1.0, shape=[self.batch_size*2])
-        loss_mat = tf.log(tf.add(all1, tf.exp(tf.multiply(mask_mat, sim_score_mat))))
+        all1 = tf.constant(1.0, shape=[self.batch_size*2])
+        loss_mat = tf.log(tf.add(all1, tf.exp(tf.multiply(mask_mat, tf.squeeze(sim_score_mat)))))
         loss_align = tf.reduce_mean(loss_mat)
 
 
@@ -129,8 +129,9 @@ class CTRL_Model(object):
         offset_pred = tf.concat((p_reg_mat, l_reg_mat), 1)
         loss_reg = tf.reduce_mean(tf.abs(tf.subtract(offset_pred, offset_label)))
 
-        loss=tf.add(tf.multiply(self.lambda_regression, loss_reg), loss_align)
-        return loss, offset_pred, loss_reg
+        loss_1 = tf.multiply(self.lambda_regression, loss_reg)
+        loss=tf.add(loss_1, loss_align)
+        return loss, loss_mat, loss_align, offset_pred, loss_reg
 
 
     def init_placeholder(self):
@@ -179,9 +180,9 @@ class CTRL_Model(object):
                                                                    self.sentence_ph_train,
                                                                    self.visual_featmap_ph_test, self.sentence_ph_test)
         # compute loss
-        self.loss_align_reg, offset_pred, loss_reg = self.compute_loss_reg(sim_reg_mat_mix, self.offset_ph)
+        self.loss_align_reg, loss_1, loss_align, offset_pred, loss_reg = self.compute_loss_reg(sim_reg_mat_mix, self.offset_ph)
         # optimize
         self.vs_train_op = self.training(self.loss_align_reg)
-        return self.loss_align_reg, self.vs_train_op, sim_reg_mat_test, offset_pred, loss_reg
+        return self.loss_align_reg, loss_1, loss_align, self.vs_train_op, sim_reg_mat_test, offset_pred, loss_reg
 
 

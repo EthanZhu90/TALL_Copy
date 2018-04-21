@@ -199,7 +199,7 @@ def run_training():
     test_result_output=open(save_model_folder + "ctrl_test_results.txt", "w")
     with tf.Graph().as_default():
 
-        loss_align_reg, vs_train_op, vs_eval_op, offset_pred, loss_reg = model.construct_model()
+        loss_align_reg, loss_1_op, loss_align_op, vs_train_op, vs_eval_op, offset_pred, loss_reg = model.construct_model()
         # Create a session for running Ops on the Graph.
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.9)
         sess = tf.Session(config = tf.ConfigProto(gpu_options = gpu_options))
@@ -211,10 +211,10 @@ def run_training():
         for step in xrange(max_steps):
             start_time = time.time()
             feed_dict = model.fill_feed_dict_train_reg()
-            _, loss_value, offset_pred_v, loss_reg_v = sess.run([vs_train_op, loss_align_reg, offset_pred, loss_reg], feed_dict=feed_dict)
+            _, loss_value, loss_1, loss_align, offset_pred_v, loss_reg_v = sess.run([vs_train_op, loss_align_reg, loss_1_op, loss_align_op, offset_pred, loss_reg], feed_dict=feed_dict)
             duration = time.time() - start_time
 
-            if step % 200 == 0:
+            if step % 200 == 0 & step:
                 # Print status to stdout.
                 print('Step %d: loss = %.3f (%.3f sec)' % (step, loss_value, duration))
 
