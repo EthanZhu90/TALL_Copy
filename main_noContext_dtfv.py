@@ -199,7 +199,7 @@ def run_training():
 
         loss_align_reg, vs_train_op, vs_eval_op, offset_pred, loss_reg = model.construct_model()
         # Create a session for running Ops on the Graph.
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.2)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.9)
         sess = tf.Session(config = tf.ConfigProto(gpu_options = gpu_options))
         # Run the Op to initialize the variables.
         init = tf.initialize_all_variables()
