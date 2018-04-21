@@ -1,6 +1,8 @@
 import tensorflow as tf
 import numpy as np
-import ctrl_model_noContext_dtfv
+# import ctrl_model_noContext_dtfv as ctrl_model
+import ctrl_model_noContext_dtfv_covideo_clip as ctrl_model
+
 from six.moves import xrange
 import time
 from sklearn.metrics import average_precision_score
@@ -185,15 +187,15 @@ def run_training():
 
     train_csv_path = "../TACoS/train_clip-sentvec.pkl"
     test_csv_path = "../TACoS/test_clip-sentvec.pkl"
-    test_feature_dir = "../TACoS/clip_128_256_test_fv100/"
-    train_feature_dir = "../TACoS/clip_features_train_fv100/"
-    # test_feature_dir = "../TACoS/clip_128_256_test/"
-    # train_feature_dir = "../TACoS/clip_features_small/"
+    # test_feature_dir = "../TACoS/clip_128_256_test_fv100/"
+    # train_feature_dir = "../TACoS/clip_features_train_fv100/"
+    test_feature_dir = "../TACoS/clip_128_256_test/"
+    train_feature_dir = "../TACoS/clip_features_small/"
     cwd = os.getcwd()
     save_model_folder = os.path.join(cwd, "trained_model", exp_info)
     if not os.path.isdir(save_model_folder): os.mkdir(save_model_folder)
 
-    model = ctrl_model_noContext_dtfv.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
+    model = ctrl_model.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
     test_result_output=open(save_model_folder + "ctrl_test_results.txt", "w")
     with tf.Graph().as_default():
 

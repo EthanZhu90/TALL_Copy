@@ -4,7 +4,7 @@ import os
 import random
 import pickle
 from shutil import copyfile
-
+import collections
 from sklearn.preprocessing import normalize
 
 '''
@@ -70,6 +70,11 @@ class TrainingDataSet(object):
 
             self.num_samples_iou = len(self.clip_sentence_pairs_iou)
             print(str(len(self.clip_sentence_pairs_iou)) + " iou clip-sentence pairs are readed")
+
+            self.video_clipfeat_dict = collections.defaultdict(list)
+            for clip_sentence_pair in self.clip_sentence_pairs_iou:
+                self.video_clipfeat_dict[clip_sentence_pair[2].split('_')[0]].append(clip_sentence_pair[2])
+
             return
 
         #f = open('tmp_get_small_training_data.txt', 'w')
@@ -176,7 +181,8 @@ class TrainingDataSet(object):
         dims = {'Trajectory': (0, 30), 'HOG': (30, 30 + 96), 'HOF': (30 + 96, 30 + 96 + 108),
                 'MBHx': (30 + 96 + 108, 30 + 96 + 108 + 96), 'MBHy': (30 + 96 + 108 + 96, 30 + 96 + 108 + 96 + 96)}
         random_batch_index = random.sample(range(self.num_samples_iou), self.batch_size)
-        image_batch = np.zeros([self.batch_size, self.visual_feature_dim])
+        image_batch_pos = np.zeros([self.batch_size, self.visual_feature_dim])
+        image_batch_neg = np.zeros([self.batch_size, self.visual_feature_dim])
         sentence_batch = np.zeros([self.batch_size, self.sent_vec_dim])
         offset_batch = np.zeros([self.batch_size, 2], dtype=np.float32)
         index = 0
@@ -188,9 +194,18 @@ class TrainingDataSet(object):
                 clip_set.add(clip_name)
                 feat_path = self.sliding_clip_path+self.clip_sentence_pairs_iou[k][2]
                 featmap = np.load(feat_path)
+
+                # get a negative sample
+                while 1:
+                    clipfeat_neg = random.choice(self.video_clipfeat_dict[self.clip_sentence_pairs_iou[k][2].split('_')[0]])
+                    if clipfeat_neg != self.clip_sentence_pairs_iou[k][2]:
+                        break
+                featmap_neg = np.load(self.sliding_clip_path+clipfeat_neg)
+
                 # read context features
                 # left_context_feat, right_context_feat = self.get_context_window(self.clip_sentence_pairs_iou[k][2], self.context_num)
-                image_batch[index,:] = featmap  # .hstack((left_context_feat, featmap, right_context_feat))
+                image_batch_pos[index,:] = featmap  # .hstack((left_context_feat, featmap, right_context_feat))
+                image_batch_neg[index,:] = featmap_neg
                 sentence_batch[index,:] = self.clip_sentence_pairs_iou[k][1][:self.sent_vec_dim]
                 p_offset = self.clip_sentence_pairs_iou[k][3]
                 l_offset = self.clip_sentence_pairs_iou[k][4]
@@ -205,9 +220,11 @@ class TrainingDataSet(object):
         Normalize
         """
         for key in dims.keys():
-            image_batch[:, dims[key][0]:dims[key][1]] = normalize(image_batch[:, dims[key][0]:dims[key][1]], norm='l2',
-                                                                  axis=1)
-        return image_batch, sentence_batch, offset_batch
+            image_batch_pos[:, dims[key][0]:dims[key][1]] = normalize(image_batch_pos[:, dims[key][0]:dims[key][1]],
+                                                                      norm='l2', axis=1)
+            image_batch_neg[:, dims[key][0]:dims[key][1]] = normalize(image_batch_neg[:, dims[key][0]:dims[key][1]],
+                                                                      norm='l2', axis=1)
+        return image_batch_pos, image_batch_neg, sentence_batch, offset_batch
 
 
 class TestingDataSet(object):
