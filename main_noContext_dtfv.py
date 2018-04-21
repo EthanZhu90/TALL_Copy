@@ -211,7 +211,7 @@ def run_training():
         for step in xrange(max_steps):
             start_time = time.time()
             feed_dict = model.fill_feed_dict_train_reg()
-            _, loss_value, loss_1, loss_align, offset_pred_v, loss_reg_v = sess.run([vs_train_op, loss_align_reg, loss_1_op, loss_align_op, offset_pred, loss_reg], feed_dict=feed_dict)
+            _, loss_value, offset_pred_v, loss_reg_v = sess.run([vs_train_op, loss_align_reg, offset_pred, loss_reg], feed_dict=feed_dict)
             duration = time.time() - start_time
 
             if step % 200 == 0 & step:
