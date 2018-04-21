@@ -55,7 +55,7 @@ class TrainingDataSet(object):
                 self.movie_clip_names[movie_name] = []
             self.movie_clip_names[movie_name].append(k)
         self.movie_names = list(movie_names_set)
-        self.visual_feature_dim = 21800
+        self.visual_feature_dim = 43600  # 21800
         self.sent_vec_dim = 4800
         self.num_samples = len(self.clip_sentence_pairs)
         self.sliding_clip_path = sliding_dir
@@ -67,22 +67,15 @@ class TrainingDataSet(object):
             print("Loading data from {}".format('clip_sentence_pairs_iou.pkl'))
             with open('clip_sentence_pairs_iou.pkl', 'rb') as input:
                 self.clip_sentence_pairs_iou = pickle.load(input)
-            """
-            Remove s26-d26 since dtfv feature extraction not finish 
-            """
-            _tmp_len = len(self.clip_sentence_pairs_iou)
-            self.clip_sentence_pairs_iou = [i for i in self.clip_sentence_pairs_iou if 's26-d26' not in i[0]]
-            self.num_samples_iou = len(self.clip_sentence_pairs_iou)
-            print(_tmp_len, " iou clip-sentence pairs are readed before remove s26-d26")
-            print(str(len(self.clip_sentence_pairs_iou)) + " iou clip-sentence pairs are readed")
 
+            self.num_samples_iou = len(self.clip_sentence_pairs_iou)
+            print(str(len(self.clip_sentence_pairs_iou)) + " iou clip-sentence pairs are readed")
             return
+
         #f = open('tmp_get_small_training_data.txt', 'w')
         self.clip_sentence_pairs_iou = []
         for idx, clip_name in enumerate(sliding_clips_tmp):
             print('Process [{}/{}]'.format(idx, len(sliding_clips_tmp)))
-            if 's26-d26' in clip_name:
-                continue
             if clip_name.split(".")[2]=="npy":
                 movie_name = clip_name.split("_")[0]
                 for clip_sentence in self.clip_sentence_pairs:
