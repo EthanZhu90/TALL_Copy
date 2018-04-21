@@ -16,7 +16,7 @@ class CTRL_Model(object):
         self.vs_lr = 0.005
         self.lambda_regression = 0.01
         self.alpha = 1.0/batch_size
-        self.semantic_size = 3072  # 2048  # 2048 # the size of visual and semantic comparison size
+        self.semantic_size = 2048 #3072  # 2048  # 2048 # the size of visual and semantic comparison size
         self.sentence_embedding_size = 4800
         self.visual_feature_dim = 43600
         self.train_set=TrainingDataSet(train_visual_feature_dir, train_csv_path, self.batch_size)

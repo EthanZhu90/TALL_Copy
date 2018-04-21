@@ -105,7 +105,7 @@ evaluate the model
 def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, test_result_output):
     dims = {'Trajectory': (0, 30), 'HOG': (30, 30 + 96), 'HOF': (30 + 96, 30 + 96 + 108),
             'MBHx': (30 + 96 + 108, 30 + 96 + 108 + 96), 'MBHy': (30 + 96 + 108 + 96, 30 + 96 + 108 + 96 + 96)}
-    IoU_thresh = [0.1, 0.3, 0.5]
+    IoU_thresh = [0.5]  # [0.1, 0.3, 0.5]
     all_correct_num_10 = [0.0]*5
     all_correct_num_5 = [0.0]*5
     all_correct_num_1 = [0.0]*5
