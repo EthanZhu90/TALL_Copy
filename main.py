@@ -166,19 +166,22 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
         test_result_output.write("Step "+str(iter_step)+": IoU="+str(IoU_thresh[k])+", R@5: "+str(all_correct_num_5[k]/all_retrievd)+"; IoU="+str(IoU_thresh[k])+", R@1: "+str(all_correct_num_1[k]/all_retrievd)+"\n")
 
 
+
 def run_training():
     initial_steps = 0
     max_steps = 10000
     batch_size = 56
-    exp_info = "origial"
+    exp_info = "original"
 
     train_csv_path = "../TACoS/train_clip-sentvec.pkl"
     test_csv_path = "../TACoS/test_clip-sentvec.pkl"
     test_feature_dir = "../TACoS/Interval128_256_overlap0.8_c3d_fc6/"
     train_feature_dir = "../TACoS/Interval64_128_256_512_overlap0.8_c3d_fc6/"
+
     cwd = os.getcwd()
     save_model_folder = os.path.join(cwd, "trained_model", exp_info)
     if not os.path.isdir(save_model_folder): os.mkdir(save_model_folder)
+
 
     model = ctrl_model.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
     test_result_output=open("ctrl_test_results.txt", "w")

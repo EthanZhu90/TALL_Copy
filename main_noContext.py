@@ -102,7 +102,7 @@ def compute_IoU_recall_top_n_forreg(top_n_list, iou_thresh, sentence_image_mat, 
 '''
 evaluate the model
 '''
-def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, test_result_output):
+def do_eval_slidingclips(sess, vs_eval_op,vs_eval_op_1, model, movie_length_info, iter_step, test_result_output, word2idx, max_words, USE_LSTM):
     IoU_thresh = [0.1, 0.3, 0.5]
     all_correct_num_10 = [0.0]*5
     all_correct_num_5 = [0.0]*5
@@ -119,33 +119,66 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
         print("clips: "+ str(len(movie_clip_featmaps)))
         sentence_image_mat=np.zeros([len(movie_clip_sentences), len(movie_clip_featmaps)])
         sentence_image_reg_mat=np.zeros([len(movie_clip_sentences), len(movie_clip_featmaps), 2])
+
+        mem_tuple, mem_featmap, mem_sent_vec, mem_sent_vec_len = list(), list(), list(), list()
+        mem_start, mem_end = list(), list()
+        test_batch_size = 56
         for k in range(len(movie_clip_sentences)):
-            #sentence_clip_name=movie_clip_sentences[k][0]
-            #start=float(sentence_clip_name.split("_")[1])
-            #end=float(sentence_clip_name.split("_")[2].split("_")[0])
+            # sentence_clip_name=movie_clip_sentences[k][0]
+            # start=float(sentence_clip_name.split("_")[1])
+            # end=float(sentence_clip_name.split("_")[2].split("_")[0])
             
             sent_vec=movie_clip_sentences[k][1]
-            sent_vec=np.reshape(sent_vec,[1,sent_vec.shape[0]])
+            if USE_LSTM:
+                sent_vec = [word2idx[_i] for _i in sent_vec.split()[:max_words]]
+                #sent_vec_len = np.zeros((1), dtype=np.int32)
+                #sent_vec_len[0] = len(sent_vec)
+                sent_vec_len = len(sent_vec)
+                sent_vec += [0] * (max_words - len(sent_vec))
+                #sent_vec = np.reshape(sent_vec, [1, np.asarray(sent_vec).shape[0]])
+            else:
+                #sent_vec=np.reshape(sent_vec,[1,sent_vec.shape[0]])
+                #sent_vec_len = np.ones((1,1), dtype=np.int32) * -1
+                sent_vec_len = -1
             for t in range(len(movie_clip_featmaps)):
                 featmap = movie_clip_featmaps[t][1]
                 visual_clip_name = movie_clip_featmaps[t][0]
                 start = float(visual_clip_name.split("_")[1])
                 end = float(visual_clip_name.split("_")[2].split("_")[0])
                 featmap = np.reshape(featmap, [1, featmap.shape[0]])
-                feed_dict = {
-                model.visual_featmap_ph_test: featmap,
-                model.sentence_ph_test:sent_vec
-                }
-                outputs = sess.run(vs_eval_op,feed_dict=feed_dict)
-                sentence_image_mat[k,t] = outputs[0]
-                # reg_clip_length = (end-start)*(10**outputs[2])
-                # reg_mid_point = (start+end)/2.0+movie_length*outputs[1]
-                reg_end = end+outputs[2]
-                reg_start = start+outputs[1]
-                
-                sentence_image_reg_mat[k,t,0] = reg_start
-                sentence_image_reg_mat[k,t,1] = reg_end
-        
+
+                mem_tuple.append((k,t))
+                mem_featmap.append(featmap)
+                mem_start.append(start)
+                mem_end.append(end)
+                mem_sent_vec.append(sent_vec)
+                mem_sent_vec_len.append(sent_vec_len)
+
+                if len(mem_tuple) > test_batch_size-1:
+                    if USE_LSTM:
+                        feed_dict = {
+                            model.visual_featmap_ph_test: np.vstack(mem_featmap),
+                            model.sentence_ph_test:       np.vstack(mem_sent_vec),
+                            model.sentence_ph_test_len:   np.vstack(mem_sent_vec_len)
+                        }
+                    else:
+                        feed_dict = {
+                            model.visual_featmap_ph_test: np.vstack(mem_featmap),
+                            model.sentence_ph_test:       np.vstack(mem_sent_vec)
+                        }
+                    outputs, outputs_1= sess.run([vs_eval_op,vs_eval_op_1], feed_dict=feed_dict)
+                    for i in range(test_batch_size):
+                        sentence_image_mat[mem_tuple[i]] = outputs[i][i][0]
+
+                        reg_end = mem_end[i]+outputs[i][i][2]
+                        reg_start = mem_start[i]+outputs[i][i][1]
+
+                        sentence_image_reg_mat[mem_tuple[i]+(0,)] = reg_start
+                        sentence_image_reg_mat[mem_tuple[i]+(1,)] = reg_end
+
+                    mem_tuple, mem_featmap, mem_sent_vec, mem_sent_vec_len = list(), list(), list(), list()
+                    mem_start, mem_end = list(), list()
+
         iclips = [b[0] for b in movie_clip_featmaps]
         sclips = [b[0] for b in movie_clip_sentences]
         
@@ -167,47 +200,60 @@ def do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, iter_step, 
 
 
 def run_training():
+
+    USE_LSTM = True
     initial_steps = 0
     max_steps = 10000
     batch_size = 56
     exp_info = "noContext"
 
-    train_csv_path = "../TACoS/train_clip-sentvec.pkl"
-    test_csv_path = "../TACoS/test_clip-sentvec.pkl"
     test_feature_dir = "../TACoS/Interval128_256_overlap0.8_c3d_fc6/"
     train_feature_dir = "../TACoS/Interval64_128_256_512_overlap0.8_c3d_fc6/"
+    word_vector_dir = "/media/evl/Public/Ethan/RL_TAL/TACoS_Word2Vector/word_vector_dict_nostem.pkl"
+    if not USE_LSTM:
+        train_csv_path = "../TACoS/train_clip-sentvec.pkl"
+        test_csv_path = "../TACoS/test_clip-sentvec.pkl"
+    else:
+        train_csv_path = "/media/evl/Public/Ethan/RL_TAL/TACoS_Word2Vector/train_sents_nostem.pkl"
+        test_csv_path = "/media/evl/Public/Ethan/RL_TAL/TACoS_Word2Vector/test_sents_nostem.pkl"
+
     cwd = os.getcwd()
     save_model_folder = os.path.join(cwd, "trained_model", exp_info)
     if not os.path.isdir(save_model_folder): os.mkdir(save_model_folder)
 
-    model = ctrl_model_noContext.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
+    model = ctrl_model_noContext.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir,
+                                            train_feature_dir, word_vector_dir, useLSTM=USE_LSTM)
     test_result_output=open(save_model_folder + "ctrl_test_results.txt", "w")
-    with tf.Graph().as_default():
 
-        loss_align_reg, vs_train_op, vs_eval_op, offset_pred, loss_reg = model.construct_model()
-        # Create a session for running Ops on the Graph.
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.2)
-        sess = tf.Session(config = tf.ConfigProto(gpu_options = gpu_options))
-        # Run the Op to initialize the variables.
-        init = tf.initialize_all_variables()
-        sess.run(init)
-        saver = tf.train.Saver()
-        print("Start to test:-----------------\n")
-        for step in xrange(max_steps):
-            start_time = time.time()
-            feed_dict = model.fill_feed_dict_train_reg()
-            _, loss_value, offset_pred_v, loss_reg_v = sess.run([vs_train_op, loss_align_reg, offset_pred, loss_reg], feed_dict=feed_dict)
-            duration = time.time() - start_time
+    #with tf.Graph().as_default():
+    loss_align_reg, vs_train_op, vs_eval_op, vs_eval_op_1, offset_pred, loss_reg = model.construct_model()
+    # Create a session for running Ops on the Graph.
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
+    sess = tf.Session(config = tf.ConfigProto(gpu_options = gpu_options))
+    # Run the Op to initialize the variables.
+    init = tf.initialize_all_variables()
+    sess.run(init)
+    saver = tf.train.Saver()
+    print("Start to train:-----------------\n")
+    for step in xrange(max_steps):
+        start_time = time.time()
+        feed_dict = model.fill_feed_dict_train_reg()
+        _, loss_value, offset_pred_v, loss_reg_v = sess.run([vs_train_op, loss_align_reg, offset_pred, loss_reg], feed_dict=feed_dict)
+        duration = time.time() - start_time
 
-            if step % 200 == 0:
-                # Print status to stdout.
-                print('Step %d: loss = %.3f (%.3f sec)' % (step, loss_value, duration))
+        if step % 200 == 0 and step:
+            # Print status to stdout.
+            print('Step %d: loss = %.3f (%.3f sec)' % (step, loss_value, duration))
 
-            if (step+1) % 1000 == 0: #2000
+        if step % 1000== 0 and step: #2000
+            if USE_LSTM:
+                saver.save(sess, save_model_folder + "iter_{}_lstm.ckpt".format(step))
+            else:
                 saver.save(sess, save_model_folder + "iter_{}.ckpt".format(step))
-                print("Start to test:-----------------\n")
-                movie_length_info=pickle.load(open("./video_allframes_info.pkl"))
-                do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, step+1, test_result_output)
+            print("Start to test:-----------------\n")
+            movie_length_info=pickle.load(open("./video_allframes_info.pkl"))
+            do_eval_slidingclips(sess, vs_eval_op, vs_eval_op_1, model, movie_length_info, step, test_result_output,
+                                 model.word2idx, model.max_words_q, USE_LSTM)
 
 
 def run_evl():
@@ -222,14 +268,14 @@ def run_evl():
     model = ctrl_model_noContext.CTRL_Model(batch_size, train_csv_path, test_csv_path, test_feature_dir, train_feature_dir)
     test_result_output = open( "ctrl_test_results_"+exp+".txt", "ab")
     with tf.Graph().as_default():
-        loss_align_reg, vs_train_op, vs_eval_op, offset_pred, loss_reg = model.construct_model()
+        loss_align_reg, vs_train_op, vs_eval_op, vs_eval_op_1, offset_pred, loss_reg = model.construct_model()
         sess = tf.Session()
         saver = tf.train.Saver()
         saver.restore(sess, "trained_model/iter_1999.ckpt")
         print("Start to test:-----------------\n")
         movie_length_info = pickle.load(open("./video_allframes_info.pkl"))
         # do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, 1999 + 1, test_result_output)
-        do_eval_slidingclips(sess, vs_eval_op, model, movie_length_info, 1999 + 1, test_result_output)
+        do_eval_slidingclips(sess, vs_eval_op, vs_eval_op_1, model, movie_length_info, 1999 + 1, test_result_output)
 
 
 def main(_):

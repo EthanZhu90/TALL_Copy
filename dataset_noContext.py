@@ -27,12 +27,14 @@ def calculate_nIoL(base, sliding_clip):
     return nIoL
 
 class TrainingDataSet(object):
-    def __init__(self, sliding_dir, it_path, batch_size):
-        
+    def __init__(self, sliding_dir, it_path, batch_size, word2idx, useLSTM=True):
+
+        self.useLSTM = useLSTM
         self.counter = 0
         self.batch_size = batch_size
         self.context_num = 1
         self.context_size = 128
+
         print("Reading training data list from "+it_path)
         # cs = pickle.load(open(it_path, 'rb'), encoding='bytes')
         cs = pickle.load(open(it_path, 'rb'))
@@ -55,56 +57,93 @@ class TrainingDataSet(object):
                 self.movie_clip_names[movie_name] = []
             self.movie_clip_names[movie_name].append(k)
         self.movie_names = list(movie_names_set)
+
+        self.word2idx = word2idx
+        self.max_words_q = 15
         self.visual_feature_dim = 4096
         self.sent_vec_dim = 4800
         self.num_samples = len(self.clip_sentence_pairs)
         self.sliding_clip_path = sliding_dir
         print(str(len(self.clip_sentence_pairs))+" clip-sentence pairs are readed")
 
+        if not useLSTM:
+            # read sliding windows, and match them with the groundtruths to make training samples
+            sliding_clips_tmp = os.listdir(self.sliding_clip_path)
+            if os.path.exists('clip_sentence_pairs_iou.pkl'):
+                print("Loading data from {}".format('clip_sentence_pairs_iou.pkl'))
+                with open('clip_sentence_pairs_iou.pkl', 'rb') as input:
+                    self.clip_sentence_pairs_iou = pickle.load(input)
+                self.num_samples_iou = len(self.clip_sentence_pairs_iou)
+                print(str(len(self.clip_sentence_pairs_iou)) + " iou clip-sentence pairs are readed")
+                return
 
-        # read sliding windows, and match them with the groundtruths to make training samples
-        sliding_clips_tmp = os.listdir(self.sliding_clip_path)
-        if os.path.exists('clip_sentence_pairs_iou.pkl'):
-            print("Loading data from {}".format('clip_sentence_pairs_iou.pkl'))
-            with open('clip_sentence_pairs_iou.pkl', 'rb') as input:
-                self.clip_sentence_pairs_iou = pickle.load(input)
-            """
-            Remove s26-d26 since dtfv feature extraction not finish 
-            """
-            _tmp_len = len(self.clip_sentence_pairs_iou)
-            self.clip_sentence_pairs_iou = [i for i in self.clip_sentence_pairs_iou if 's26-d26' not in i[0]]
+            self.clip_sentence_pairs_iou = []
+            for clip_name in sliding_clips_tmp:
+                if clip_name.split(".")[2]=="npy":
+                    movie_name = clip_name.split("_")[0]
+                    for clip_sentence in self.clip_sentence_pairs:
+                        original_clip_name = clip_sentence[0]
+                        original_movie_name = original_clip_name.split("_")[0]
+                        if original_movie_name==movie_name:
+                            start = int(clip_name.split("_")[1])
+                            end = int(clip_name.split("_")[2].split(".")[0])
+                            o_start = int(original_clip_name.split("_")[1])
+                            o_end = int(original_clip_name.split("_")[2].split(".")[0])
+                            iou = calculate_IoU((start, end), (o_start, o_end))
+                            if iou>0.5:
+                                nIoL=calculate_nIoL((o_start, o_end), (start, end))
+                                if nIoL<0.15:
+                                    movie_length = movie_length_info[movie_name.split(".")[0]]
+                                    start_offset =o_start-start
+                                    end_offset = o_end-end
+                                    self.clip_sentence_pairs_iou.append((clip_sentence[0], clip_sentence[1], clip_name, start_offset, end_offset))
             self.num_samples_iou = len(self.clip_sentence_pairs_iou)
-            print(_tmp_len, " iou clip-sentence pairs are readed before removAe s26-d26")
+            print(str(len(self.clip_sentence_pairs_iou))+" iou clip-sentence pairs are readed")
+            with open('clip_sentence_pairs_iou.pkl', 'wb') as output:
+                print("Saving clip_sentence_pairs_iou")
+                pickle.dump(self.clip_sentence_pairs_iou, output)
+        else:
+
+            # read sliding windows, and match them with the groundtruths to make training samples
+            sliding_clips_tmp = os.listdir(self.sliding_clip_path)
+            if os.path.exists('clip_sentence_pairs_iou_LSTM.pkl'):
+                print("Loading data from {}".format('clip_sentence_pairs_iou_LSTM.pkl'))
+                with open('clip_sentence_pairs_iou_LSTM.pkl', 'rb') as input:
+                    self.clip_sentence_pairs_iou = pickle.load(input)
+                self.num_samples_iou = len(self.clip_sentence_pairs_iou)
+                print(str(len(self.clip_sentence_pairs_iou)) + " iou clip-sentence pairs are readed")
+                return
+            print('Preparing clip_sentence_pairs_iou_LSTM.pkl')
+            self.clip_sentence_pairs_iou = []
+            for idx, clip_name in enumerate(sliding_clips_tmp):
+                if idx%1000 == 0 and idx:
+                    print("processing [{}/{}]".format(idx, len(sliding_clips_tmp)))
+                if clip_name.split(".")[2] == "npy":
+                     movie_name = clip_name.split("_")[0]
+                     for clip_sentence in self.clip_sentence_pairs:
+                         original_clip_name = clip_sentence[0]
+                         original_movie_name = original_clip_name.split("_")[0]
+                         if original_movie_name == movie_name:
+                             start = int(clip_name.split("_")[1])
+                             end = int(clip_name.split("_")[2].split(".")[0])
+                             o_start = int(original_clip_name.split("_")[1])
+                             o_end = int(original_clip_name.split("_")[2].split(".")[0])
+                             iou = calculate_IoU((start, end), (o_start, o_end))
+                             if iou > 0.5:
+                                 nIoL = calculate_nIoL((o_start, o_end), (start, end))
+                                 if nIoL < 0.15:
+                                     movie_length = movie_length_info[movie_name.split(".")[0]]
+                                     start_offset = o_start - start
+                                     end_offset = o_end - end
+                                     self.clip_sentence_pairs_iou.append(
+                                         (clip_sentence[0], clip_sentence[1], clip_name, start_offset, end_offset))
+            self.num_samples_iou = len(self.clip_sentence_pairs_iou)
             print(str(len(self.clip_sentence_pairs_iou)) + " iou clip-sentence pairs are readed")
-
-            return
-
-        self.clip_sentence_pairs_iou = []
-        for clip_name in sliding_clips_tmp:
-            if clip_name.split(".")[2]=="npy":
-                movie_name = clip_name.split("_")[0]
-                for clip_sentence in self.clip_sentence_pairs:
-                    original_clip_name = clip_sentence[0] 
-                    original_movie_name = original_clip_name.split("_")[0]
-                    if original_movie_name==movie_name:
-                        start = int(clip_name.split("_")[1])
-                        end = int(clip_name.split("_")[2].split(".")[0])
-                        o_start = int(original_clip_name.split("_")[1]) 
-                        o_end = int(original_clip_name.split("_")[2].split(".")[0])
-                        iou = calculate_IoU((start, end), (o_start, o_end))
-                        if iou>0.5:
-                            nIoL=calculate_nIoL((o_start, o_end), (start, end))
-                            if nIoL<0.15:
-                                movie_length = movie_length_info[movie_name.split(".")[0]]
-                                start_offset =o_start-start
-                                end_offset = o_end-end
-                                self.clip_sentence_pairs_iou.append((clip_sentence[0], clip_sentence[1], clip_name, start_offset, end_offset))
-        self.num_samples_iou = len(self.clip_sentence_pairs_iou)
-        print(str(len(self.clip_sentence_pairs_iou))+" iou clip-sentence pairs are readed")
-        with open('clip_sentence_pairs_iou.pkl', 'wb') as output:
-            print("Saving clip_sentence_pairs_iou")
-            pickle.dump(self.clip_sentence_pairs_iou, output)
-
+            with open('clip_sentence_pairs_iou_LSTM.pkl', 'wb') as output:
+                 print("Saving clip_sentence_pairs_iou")
+                 pickle.dump(self.clip_sentence_pairs_iou, output)
+            # exit()
+            a = 1
     '''
     compute left (pre) and right (post) context features
     '''
@@ -176,37 +215,73 @@ class TrainingDataSet(object):
 
         random_batch_index = random.sample(range(self.num_samples_iou), self.batch_size)
         image_batch = np.zeros([self.batch_size, self.visual_feature_dim])
-        sentence_batch = np.zeros([self.batch_size, self.sent_vec_dim])
-        offset_batch = np.zeros([self.batch_size, 2], dtype=np.float32)
-        index = 0
-        clip_set = set()
-        while index < self.batch_size:
-            k = random_batch_index[index]
-            clip_name = self.clip_sentence_pairs_iou[k][0]
-            if not clip_name in clip_set:
-                clip_set.add(clip_name)
-                feat_path = self.sliding_clip_path+self.clip_sentence_pairs_iou[k][2]
-                featmap = np.load(feat_path)
-                # read context features
-                # left_context_feat, right_context_feat = self.get_context_window(self.clip_sentence_pairs_iou[k][2], self.context_num)
-                image_batch[index,:] = featmap  # .hstack((left_context_feat, featmap, right_context_feat))
-                sentence_batch[index,:] = self.clip_sentence_pairs_iou[k][1][:self.sent_vec_dim]
-                p_offset = self.clip_sentence_pairs_iou[k][3]
-                l_offset = self.clip_sentence_pairs_iou[k][4]
-                offset_batch[index,0] = p_offset
-                offset_batch[index,1] = l_offset
-                index+=1
-            else:
-                r = random.choice(range(self.num_samples_iou))
-                random_batch_index[index] = r
-                continue
+        if self.useLSTM:
+            # input is word index
+            sentence_len_batch= np.zeros(self.batch_size, dtype=np.int32)
+            sentence_batch = np.zeros([self.batch_size, self.max_words_q],dtype=np.int32)
+            offset_batch = np.zeros([self.batch_size, 2], dtype=np.float32)
+            index = 0
+            clip_set = set()
+            while index < self.batch_size:
+                k = random_batch_index[index]
+                clip_name = self.clip_sentence_pairs_iou[k][0]
+                if not clip_name in clip_set:
+                    clip_set.add(clip_name)
+                    feat_path = self.sliding_clip_path + self.clip_sentence_pairs_iou[k][2]
+                    featmap = np.load(feat_path)
+                    # read context features
+                    # left_context_feat, right_context_feat = self.get_context_window(self.clip_sentence_pairs_iou[k][2], self.context_num)
+                    image_batch[index, :] = featmap  # .hstack((left_context_feat, featmap, right_context_feat))
+                    sent_idx_vector = [self.word2idx[_i] for _i in self.clip_sentence_pairs_iou[k][1].split()[:self.max_words_q]]
+                    sentence_len_batch[index] = len(sent_idx_vector)
+                    # padding with 0 to max length(15)
+                    sent_idx_vector += [0]*(self.max_words_q - len(sent_idx_vector))
+                    sentence_batch[index, :] = np.asarray(sent_idx_vector)
+
+                    p_offset = self.clip_sentence_pairs_iou[k][3]
+                    l_offset = self.clip_sentence_pairs_iou[k][4]
+                    offset_batch[index, 0] = p_offset
+                    offset_batch[index, 1] = l_offset
+                    index += 1
+                else:
+                    r = random.choice(range(self.num_samples_iou))
+                    random_batch_index[index] = r
+                    continue
+
+            return image_batch, sentence_batch, offset_batch, sentence_len_batch
+        else:
+            # input is the sentence vector from skip-thought
+            sentence_batch = np.zeros([self.batch_size, self.sent_vec_dim])
+            offset_batch = np.zeros([self.batch_size, 2], dtype=np.float32)
+            index = 0
+            clip_set = set()
+            while index < self.batch_size:
+                k = random_batch_index[index]
+                clip_name = self.clip_sentence_pairs_iou[k][0]
+                if not clip_name in clip_set:
+                    clip_set.add(clip_name)
+                    feat_path = self.sliding_clip_path+self.clip_sentence_pairs_iou[k][2]
+                    featmap = np.load(feat_path)
+                    # read context features
+                    # left_context_feat, right_context_feat = self.get_context_window(self.clip_sentence_pairs_iou[k][2], self.context_num)
+                    image_batch[index,:] = featmap  # .hstack((left_context_feat, featmap, right_context_feat))
+                    sentence_batch[index,:] = self.clip_sentence_pairs_iou[k][1][:self.sent_vec_dim]
+                    p_offset = self.clip_sentence_pairs_iou[k][3]
+                    l_offset = self.clip_sentence_pairs_iou[k][4]
+                    offset_batch[index,0] = p_offset
+                    offset_batch[index,1] = l_offset
+                    index+=1
+                else:
+                    r = random.choice(range(self.num_samples_iou))
+                    random_batch_index[index] = r
+                    continue
 
 
-        return image_batch, sentence_batch, offset_batch
+            return image_batch, sentence_batch, offset_batch, -1
 
 
 class TestingDataSet(object):
-    def __init__(self, img_dir, csv_path, batch_size):
+    def __init__(self, img_dir, csv_path, batch_size, word2idx, useLSTM=True):
         #il_path: image_label_file path
         #self.index_in_epoch = 0
         #self.epochs_completed = 0
